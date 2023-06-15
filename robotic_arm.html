@@ -34,12 +34,48 @@
         <br>
         <div>
             <h1>5-Axis Robotic Arm<br>Build & Firmware</h1>
-            <p>Introduction text</p>
+            <p>
+                Learning how to program a robotic arm has always been in my bucket list. But getting a decent desktop-sized robotic arm kit can be expensive, especially when you're a student. Fortunately, having a 3D-printer at hand and some skills in mechanical engineering can help making one for less than €100. And after a few weeks of design and tinkering, the coding could finally begin.</p>
+            <p>
+                In this presentation, which will mainly focus on the firmware of the robot, I will explain how the dynamics of the system is controlled, the design choices that I have made, and much more. I will also try to (fairly) criticize my work, using what I've learned in the process to suggest improvements or point at potential drawbacks.</p>
             <iframe width="650" height="365" src="https://www.youtube.com/embed/0JwxfxfQDAY" title="5-Axis Robotic Arm Demo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="padding-top: 10px; padding-bottom: 30px;"></iframe>
-            <h2>Mechanical build</h2>
+            <div class="note">
+                <h2>TL;DR</h2>
+                <ul>
+                    <li><p>Recap 1</p></li>
+                    <li><p>Recap 2</p></li>
+                    <li><p>Recap 3</p></li>
+                </ul>
+            </div>
+            <h2>Overview</h2>
+            <p>
+                The robot is made of six kinematics chains and five joints, resulting in a total extended arm length of 300mm. Mobility-wise, it can pivot around 180° and cover an angular range of 110°. These features allow the arm to operate a multitude of movements and position itself in various configurations.</p>
+            <img src="img/work_enveloppe.png" alt="Work envelopped of the robot">
+            <figcaption>Front and Top Views of the robot's work enveloppe.</figcaption>
+            <br>
+            <p>
+                Six servo motors are used to generate mechanical power, complemented by two transmissions consisting of spur gears and bevel gears. The transmissions provide the robot with increased strength and payload capacity, at the expense of operative range. Furthermore, all cables are seamlessly embedded within the frame, minimizing clutter and ensuring a streamlined appearance.</p>
+            <p>
+                Hardware-wise, the robot is controlled via a Teensy 4.0 development board, using an Arm Cortex M7. The board itself is embedded within the base of the robot.</p>
             <img src="img/robotic_arm_section_view_annotated.png" alt="3D model of the arm, colored after the main kinematic chains">
             <figcaption>Section view: 3D model of the arm, colored after the main kinematic chains</figcaption>
-            <br>            
+            <br><br>
+            <h2>Firmware Architecture</h2>
+            <p>Some text</p>
+            <!--Explain the importance of firmware in a robotic arm and how it controls the arm's movements and functionality. Discuss the challenges and considerations involved in developing firmware for a 5-axis robotic arm. Emphasize the significance of your embedded program in ensuring precise and reliable operation.-->
+            <!--Describe the overall architecture and design principles of your firmware. Discuss the programming language (C) and any specific libraries or frameworks used. Explain the modular structure of your firmware and how different components interact.-->
+            <h2>Key Features</h2>
+            <p>Some text</p>
+            <!--Highlight the main features and functionalities implemented in your firmware. Provide a detailed explanation of how the firmware controls each axis and coordinates their movements. Showcase any advanced features, such as trajectory planning, kinematics, or sensor integration.-->
+            <h2>Development Process</h2>
+            <p>Some text</p>
+            <!--Share insights into your development process, including any challenges encountered and how you overcame them. Discuss the tools, IDEs, or development environments used for firmware development. Highlight any testing methodologies or strategies employed to ensure the reliability of your firmware.-->
+            <h2>Results and Future Enhancements</h2>
+            <p>Some text</p>
+            <!--Discuss the successful outcomes and achievements of your robotic arm project. Mention the video again, along with any other relevant results obtained during testing or real-world applications. Talk about potential future enhancements or features you plan to add to your robotic arm.-->
+            <h2>Wrapping Up</h2>
+            <p>Some text</p>
+            <!--Encourage visitors to explore further, provide contact information or links to relevant resources. Express gratitude for their interest in your project and invite them to reach out with any inquiries.-->
         </div>
         <div style="height: 100px;"></div>
     </main>

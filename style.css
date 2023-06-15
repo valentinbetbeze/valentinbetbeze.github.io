@@ -269,3 +269,20 @@ footer svg:hover {
 .mybutton:hover {
   background-color: var(--color-06);
 }
+.note {
+  display: block;
+  background-color: var(--color-02);
+  margin-top: 20px;
+  margin-bottom: 40px;
+  padding-left: 20px;
+  padding-right: 20px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  border-radius: 5px;
+}
+.note ul {
+  line-height: 0px;
+  padding-left: 15px;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
