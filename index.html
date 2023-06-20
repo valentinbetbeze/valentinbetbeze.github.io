@@ -17,7 +17,7 @@
             <li class="dropdown">Projects
                 <div class="dropdown-panel">
                     <a href="platform_game.html">ESP32-based Platform Game</a>
-                    <a href="robotic_arm.html">5-Axis Robotic Arm Build & Firmware</a>
+                    <a href="robotic_arm.html">5-axis Robotic Arm Build & Firmware</a>
                 </div>
             </li>
         </ul>
@@ -59,9 +59,8 @@
         </div>
         <br>
         <div>
-            <h1>My projects</h1>
+            <h1 id="my-projects">My projects</h1>
             <p>Here is a quick overview of my latest projects, starting from the most recent one. You can find the fully detailed presentations of those projects under the "Project" section in the top navigation panel.</p>
-            <div style="height: 10px;"></div>
             <h2>ESP32-based Platform Game</h2><div class="tag ongoing">ongoing</div>
             <div>
                 <img src="img/650x400px.png" alt="Gandalf in the Shire">
@@ -71,9 +70,8 @@
                     Hardware-wise, the program is running on an ESP32 (the "console") and displays on an external 128x160 LCD screen at a steady 45 frames per second, with a 16-bit color depth. The player dynamically interacts with its character using a wireless gamepad (joystick + buttons) communicating with the console via Bluetooth LE. The game also allows music and various sounds to be played via a buzzer, the way some consoles of the 70's used to.</p>
                 <p>
                     This project uses no external library (only the ESP-IDF API's) and has its own peripheral drivers and game engine. <a href="platform_game.html">Click here to know more about the technical details!</a></p>
-            </div>
-            <div style="height: 50px;"></div>
-            <h2>5-Axis Robotic Arm Build & Firmware</h2><div class="tag completed">completed</div>
+            </div><br>
+            <h2>5-axis Robotic Arm Build & Firmware</h2><div class="tag completed">completed</div>
             <div>
                 <img src="img/robot_img.jpg" alt="The robot in operation">
                 <p>
@@ -83,9 +81,10 @@
                 <p>
                     As one of my first embedded project, I based the 5-axis arm on the Teensy 4.0 board, using the Arduino framework, giving me a straightforward start. The firmware allows the user to control the effector of the robot using a cartesian coordinate system. The inverse kinematics algorithm within the firmware takes care of feeding the motors with the proper angular positions, as well as managing the dynamics of the system.</p>
                 <p>
-                    I have so much more to say, but this wouldn't be a "quick overview" anymore. Worry not, <a href="robotic_arm.html">I've explained all other exciting details right here!</a></p> 
+                    I have so much more to say, but this wouldn't be a "quick overview" anymore. Worry not, <a href="robotic_arm.html">I've explained all the exciting details right here!</a></p> 
             </div>
         </div>
+        <a class="mybutton" style="position: relative; align-self: last baseline;" href="#">Go back up ↑</a>
         <div style="height: 100px;"></div>
     </main>
     <!-- Footer -->
