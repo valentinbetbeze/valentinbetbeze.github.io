@@ -185,7 +185,7 @@ Framework:  Arduino IDE</pre>
             <p>
                 Now that the robot is safe from any error or infeasible configuration, and that step 2 takes care of translating our cartesian coordinates into joint angles, comes the question of the <b>motion profile</b>. If we were to run the motors without defining any profile, the one automatically applied would be linear: the shaft would rotate to the computed angle at a constant maximum angular velocity.</p>
             <p>
-                Is it what we want? If we care about the durability of the robot and the integrity of its payload, not so much. Actually, we may want the smoothest movements we could get, and to do so, we need to <b>gradually accelerate and decelerate</b> along our angular displacement. This is what the 'Compute dynamics' block in the flowchart is all about.</p>
+                Is it what we want? If we care about the durability of the robot and the integrity of its payload, not so much. Actually, we may want the smoothest movements we could get, and to do so, we need to <b>gradually accelerate and decelerate</b> along our angular displacement. This is what the <i>Compute dynamics</i> block in the flowchart is all about.</p>
             <p>
                 Once the profile is defined, <code>running</code> is set to <code>true</code>, which will activate the robot actuation block until the course is complete. Here is a block diagram laying out the full computation process for the dynamics parameters of the robot.</p>
             <!--Computation process block diagram-->
@@ -258,6 +258,10 @@ Framework:  Arduino IDE</pre>
             </ol>
             <p>
                 Those are two of many potential enhancements that I have thought of. A robot arm is a versatile tool that can be a platform for many other projects.</p>
+            <br><br>
+
+
+            <h2>Wrapping Up</h2>
             <p>
                 I hope you enjoyed reading this presentation, and if you did, feel free to look at the <a href="https://github.com/valentinbetbeze/5-Axis_Robotic_Arm_Firmware" target="_blank">project's reposity on GitHub</a>.</p>
             <p>
