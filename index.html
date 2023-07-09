@@ -37,11 +37,11 @@
             <p>
                 And welcome to my website!</p>
             <div>
-                <img src="img/250x300px.png" alt="Myself in Greece" style="float: right; margin-left: 15px; margin-top: 0px; margin-bottom: 30px;">
+                <img src="img/me.jpg" alt="Me in Norway" style="float: right; margin-left: 15px; margin-top: 0px; margin-bottom: 30px;" width="230px">
                 <p>
                     I'm Valentin, a mechanical engineer who, during an intership mid-way through college, found his calling in embedded programming.
                 <p>
-                    A few years later, after having completed my studies and landed my first job as a test engineer in a biotech company in France, I decided to go all in and follow my true passion for programming. Therefore, in February 2023, I bid farewell to gears and levers, and went on diving into the world of embedded systems.</p>
+                    A few years later, after having completed my studies and landed my first job as a test engineer in a biotech company in France, I decided to go all in and follow my true passion for programming. Therefore, in March 2023, I bid farewell to gears and levers, and went on diving into the world of embedded systems.</p>
                 <p>
                     On this website, you will find a showcase of my latest embedded projects. You might be wondering why I decided to work on those projects in particular. What's their purpose, and what am I trying to achieve with them?</p>
                 <p>
@@ -51,7 +51,7 @@
                 <p>
                     I invite you to explore this website, and hope you will enjoy reading about the projects I've had so much fun working on. You can also find the codebase of those projects on my <a href="https://github.com/valentinbetbeze" target="_blank">GitHub</a>!</p>
                 <p>
-                    If you'd like to discuss collaboration opportunities or simply connect, please feel free to reach out to me at <b>valentin.betbeze@gmail.com</b>. Have a good day!</p>
+                    If you'd like to discuss collaboration opportunities or simply connect, please feel free to reach out at <b>valentin.betbeze@gmail.com</b>. Have a good day!</p>
                 <p> 
                     ps: When I'm not coding or building some project, I love travelling, hiking or simply reading good old books... like The Lord of the Rings :D</p>
                 </p>
@@ -60,20 +60,36 @@
         <br>
         <div>
             <h1 id="my-projects">My projects</h1>
-            <p>Here is a quick overview of my latest projects, starting from the most recent one. You can find the fully detailed presentations of those projects under the "Project" section in the top navigation panel.</p>
-            <h2>ESP32-based Platform Game</h2><div class="tag ongoing">ongoing</div>
+            <p style="padding-bottom: 0; margin-bottom: 0;">
+                Here is a quick overview of my latest projects, starting from the most recent one. You can find the fully detailed presentations of those projects under the "Project" section in the top navigation panel.</p>
+            
+
+            <h2>Real-time Laser Dot Tracking Firmware</h2><div class="tag ongoing">ongoing</div>
             <div>
-                <img src="img/650x400px.png" alt="Gandalf in the Shire">
+                <p>
+                    Currently a work-in-progress, this project uses an STM32 and a camera in tandem to have a laser dot tracking firmware. The firmware captures the frames through the camera, processes them to find the dot, and sends the frames to a PC via UART for visualization.</p>
+                <p>
+                    The end goal of this project is to gain knowledge and skills with using the UART protocol, developing a camera driver, and using an RTOS to ensure strict timing requirements.</p>
+                <p>
+                    I will update this post as the project evolves, and will write a technical presentation once finished. Stay tuned.</p>
+            </div>
+
+
+            <h2>ESP32-based Platform Game</h2><div class="tag completed">completed</div>
+            <div>
+                <img src="img/P2_Platform_Game/lotfr_overview.jpg" alt="The console and its controller">
                 <p>
                     Inspired from the universe of The Lord of the Rings, this platform game currently has 2 worlds the player can explore: the Shire and the Mines of Moria. 10 minutes of average game time can be expected for the first runs, accounting for a few deaths leading the player to start over. Although, with persistence, the 'fake ring' may be retrieved from the depth of the Moria...</p>
                 <p>
-                    Hardware-wise, the program is running on an ESP32 (the "console") and displays on an external 128x160 LCD screen at a steady 45 frames per second, with a 16-bit color depth. The player dynamically interacts with its character using a wireless gamepad (joystick + buttons) communicating with the console via Bluetooth LE. The game also allows music and various sounds to be played via a buzzer, the way some consoles of the 70's used to.</p>
+                    Hardware-wise, the program is running on an ESP32 (the "console") and displays on an external 128x160 LCD screen at a steady 35 frames per second, with a 16-bit color depth. The player dynamically interacts with its character using a wireless gamepad (joystick + buttons) communicating with the console via Bluetooth Low Energy. The game also allows music and various sounds to be played via a buzzer, the way some consoles of the 70's used to.</p>
                 <p>
                     This project uses no external library (only the ESP-IDF API's) and has its own peripheral drivers and game engine. <a href="platform_game.html">Click here to know more about the technical details!</a></p>
-            </div><br>
+            </div>
+
+
             <h2>5-axis Robotic Arm Build & Firmware</h2><div class="tag completed">completed</div>
             <div>
-                <img src="img/robot_img.jpg" alt="The robot in operation">
+                <img src="img/P1_Robot_Arm/robot_overview.jpg" alt="The robot in operation">
                 <p>
                     Started during the plentiful free-time period that was the COVID-19 2020 lockdown, this project is at the boundaries between my love for mechanical engineering and programming. The whole purpose behind the design and building of this robot was to get a first foot in the world of robotics, and learn the intriguing ways of controlling servo motors. Plus, having a desktop-sized robotic arm at your side can always make a good friend.</p>
                 <p>
@@ -99,4 +115,5 @@
         </div>
     </footer>
 </body>
+
 </html>

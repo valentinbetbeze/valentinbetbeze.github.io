@@ -9,7 +9,7 @@
 
 <!-- Webpage -->
 <body>
-    <div class=banner><img src="img/lotfr_gif.gif"></div>
+    <div class=banner><img src="img/P2_Platform_Game/lotfr_gif.gif" style="transform: translateY(7vw);"></div>
     <!-- Navigation bar -->
     <nav>
         <ul>
@@ -31,6 +31,8 @@
     </nav>
     <!-- Main section -->
     <main>
+        <div class="button-contents-mask" style="height:2500px;"></div>
+        <a class="mybutton contents" href="#contents-table">Contents ↑</a>
         <br>
         <div>
             <h1>ESP32-based Platform Game</h1>
@@ -40,14 +42,590 @@
                 Project repository
             </a>
             <pre class="metadata">
-Timeline:   2023 - Developed peripheral drivers & game engine
-                   Created worlds 'The Shire' & 'The Mines of Moria'
-Platform:   ESP32-WROOM-32
-Framework:  ESP-IDF</pre>
+<i>Written:        09th of July 2023</i>
+<i>Last updated:   09th of July 2023</i>
+
+Timeline:       2023 - Developed peripheral drivers & game engine
+                       Created worlds 'The Shire' & 'The Mines of Moria'
+Platform:       ESP32-WROOM-32
+Framework:      ESP-IDF</pre>
             <br>
+            <p>
+                In the context of my career change from mechanical to embedded software engineering, I was looking for starting a project that would be rich in learning, creative and fun to build. Its purpose would be threefold:</p>
+            <ol>
+                <li>To continue <b>developing my C programming skills</b>,</li>
+                <li>To <b>write drivers</b> for several external peripherals,</li>
+                <li>And to work with at least <b>two communication protocols.</b></li>
+            </ol>
+            <p>
+                Plus, living abroad from Airbnbs to Airbnbs required me to travel light, so I’d need a project using small components. Making a game console with its own game answered this problem: a microcontroller, a display, and a joystick and I was good to go. Any other component would be a bonus.</p>
+            <p>
+                After that, I settled on the platform sub-genre. It is challenging enough to push myself, is modular in terms of features and definitely compatible with the computing power of a microcontroller. As for the choice of the game’s theme? Well, I too, <a href="img/P2_Platform_Game/hobbit.gif" target="_blank">was going on an adventure!</a></p>
+
+            <!--Introduction video-->
+            <iframe width="650" height="365" src="https://www.youtube.com/embed/bDgq-sc_sCA" title="Project Introduction video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="padding-top: 10px; padding-bottom: 30px;"></iframe>
+            
+            <p>
+                Now that the introduction is done, let’s get started. This presentation will focus on the technical aspects of the project, specifically the peripheral’s drivers & protocols used, the inner workings of the game engine, as well as how I overcame performance and memory constraints.</p>
+
+            <!--Too Long; Didn't Read-->
+            <div class="note">
+                <h2>TL;DR</h2>
+                <ul>
+                    <li>
+                        The embedded system consists of a console and a controller using ESP32 microcontrollers and BLE communication, with a sequential firmware architecture and <b>modular layers</b> for independent testing and debugging.</li>
+                    <br>
+                    <li>
+                        Graphics and sounds in the game utilize <b>custom hardware drivers</b> for building frames and controlling frequencies, while events are managed through records to trigger responses and modify the game environment.</li>
+                    <br>
+                    <li>
+                        In terms of system resource efficiency, the firmware prioritizes <b>static memory allocation, optimizes SPI transactions, and uses DMA</b> to achieve a target frame rate of 30+ FPS.</li>
+                </ul>
+            </div>
+
+
+            <h2 id="contents-table">Contents</h2>
+            <ol class="contents">
+                <li><a class="intralink" href="#system-overview">System Overview</a></li>
+                <li><a class="intralink" href="#firmware-arch">Firmware Architecture</a></li>
+                <ul>
+                    <li><a class="intralink" href="#program-flow">Program flow</a></li>
+                    <li><a class="intralink" href="#drivers-lib">Drivers and libraries</a></li>
+                </ul>
+                <li><a class="intralink" href="#graphics-sound">Graphics and Sound</a></li>
+                <ul>
+                    <li><a class="intralink" href="#build-process">How are frames built and displayed?</a></li>
+                    <li><a class="intralink" href="#playing-sound">How are sound effects created and played?</a></li>
+                </ul>
+                <li><a class="intralink" href="#interactivity">Game Interactivity</a></li>
+                <ul>
+                    <li><a class="intralink" href="#physics">Physics: simulating collisions and gravity</a></li>
+                    <li><a class="intralink" href="#events">In-game interactions: handling events</a></li>
+                </ul>
+                <li><a class="intralink" href="#gamepad-ble">Gamepad and Bluetooth Low Energy</a></li>
+                <ul>
+                    <li><a class="intralink" href="#gamepad">Implementing the gamepad in the system</a></li>
+                    <li><a class="intralink" href="#ble">Using BLE for wireless communication</a></li>
+                </ul>
+                <li><a class="intralink" href="#sys-eff">System Resource Efficiency</a></li>
+                <ul>
+                    <li><a class="intralink" href="#mem-management">Memory management</a></li>
+                    <li><a class="intralink" href="#perf">Optimizing performances</a></li>
+                </ul>
+                <li><a class="intralink" href="#results">Results & Potential Improvements</a></li>
+                <li><a class="intralink" href="#wrapping-up">Wrapping Up</a></li>
+            </ol>
+
+            <h2 id="system-overview">System Overview</h2>
+            <!--Annotated overview picture-->
+            <img src="img/P2_Platform_Game/lotfr_setup_annotated.jpg" alt="Hardware setup of the system">
+            <figcaption>Hardware setup of the system.</figcaption>
+            <br><br>
+            <p>
+                <b>The system is made of two main parts</b>, each having its own firmware: the “console” and the “controller”. The console is where the game runs and displays: it is composed of an ESP32, a 160x128 TFT LCD display and a buzzer. The controller is the interface between the user and the game: it also features an ESP32 and has a gamepad made of a joystick and a few buttons. <b>Both systems communicate wirelessly</b> via Bluetooth Low Energy (BLE).</p>
+            <p>
+                I have chosen to use two ESP32 microcontrollers for this project as I wanted both the console and the controller to be physically separated, which would allow the latter to be handled freely from the rest of the system. ESP32 supports several wireless communication protocols, such as Wi-Fi, Bluetooth, and BLE, which makes it a great choice for this application.</p>
+
+            <div class="center">
+                <img src="img/P2_Platform_Game/lotfr_system_block_diagram.svg" alt="Block diagram of the system">
+                <figcaption>Block diagram of the system</figcaption>
+            </div>
+
+            <p>
+                BLE is not the only type of communication used in the system. The console’s ESP32 sends the game frames to the external LCD display via a Serial Peripheral Interface (SPI) communication. Because the display does not communicate anything back to the microcontroller unit (MCU), a variant called 3-wire SPI is used, which uses only the Master Out Slave In (MOSI) line.</p>
+            <p>
+                On the controller, the position of the joystick is read through the ESP32’s Analog-to-Digital Converter (ADC) module and the buttons via simple General Input Output Pin (GPIO) state reading.</p>
+
+            
+            <h2 id="firmware-arch">Firmware Architecture</h2>
+
+            <h3 id="program-flow">Program flow</h3>
+            <p>
+                The firmware starts with initializing the BLE client/server tasks, initializing the hardware and loading the game (console-side). Loading the game is the process of scanning a game map - a custom data structure, more on this later - to load dynamic assets in memory, such as game state variables, records, enemies, platforms, etc. Follows the display of the main menu while playing the introduction music.</p>
+            <p>
+                The program flow then enters the main part of the firmware: a loop that can only be broken if the game is over. This loop, which we call the <i>game loop</i> for later references, is where <b>most of the computing time is spent</b>. It iterates exactly at a capped 35 Frames Per Seconds (FPS) refresh rate.</p>
+            <p>
+                The mechanism to cap the refresh rate is the following: a hardware timer is used; if the processor tries to initiate a new iteration too early, the whole loop is ignored and the processor checks the time again, until <code>t = 1 / FPS</code> is reached. I purposefully did not show this mechanism on the flowchart below to simplify its representation.</p>
+
+            <div class="center">
+                <img src="img/P2_Platform_Game/lotfr_flowchart.svg" alt="Flowchart of the firmware">
+                <figcaption>Flowchart of the firmware</figcaption>
+            </div>
+
+            <p>
+                The game loop consists in reading/processing the gamepad input values, computing all the game logic, and generating the graphics/sound outputs. Every iteration, an <b>array of 20480</b> (160x128) <b>16-bit integers</b> is updated and sent via SPI to the LCD display. This specific array, called <i>frame</i> in the firmware, is the keystone of the firmware’s graphic management.</p>
+            <p>
+                As no RTOS is used for the project outside of the BLE stack, <b>all those tasks are run sequentially</b>. We could wonder if a sequential architecture is an issue for this application? The answer is that it depends on the requirements of the project. My target refresh rate was 30 FPS (or 33 milliseconds to complete one iteration), and the system can actually reach 35 FPS, so the blocking nature of the architecture is compatible with the target specification. Yet, if one wanted more FPS, it would become an issue.</p>
+            <div class="note">
+                The reason I didn’t use an RTOS for this project is to learn step-by-step and gradually increase the complexity and abstraction of my programs. I will use an RTOS on my next project.</div>
+            <p>
+                To reach higher frame rates, I would have to use the second core of the Xtensa LX6 processor and redesign the firmware to allow multithreading. This is a future improvement I discuss in the <a class="intralink" href="#results"><i>Results & Potential improvements</i></a> section.</p>
+
+            <h3 id="drivers-lib">Drivers and libraries</h3>
+            <p>
+                From the very start of the project, I wanted a firmware to be <b></b>designed around independent layers</b>, relying only on the layer below them, rather than a large and single piece of code. The reason for this is threefold: <b>modularity</b>, <b>maintainability</b> and <b>adaptability</b> to potential future modifications.</p>
+            <p>
+                Hence, the firmware is built on four main layers:</p>
+            <ol>
+                <li>The ESP-IDF API (and nimBLE for the BLE stack),</li>
+                <li>The hardware drivers,</li>
+                <li>The game engine,</li>
+                <li>And the game application.</li>
+            </ol>
+            <p>
+                Except for the base APIs & the BLE GAP code, <b>all layers are fully custom and written from scratch in C</b>. As a note, the BLE GATT server code is based on example files provided by Espressif, that I have modified to fit this project.</p>
+
+            <div class="center">
+                <img src="img/P2_Platform_Game/layered_architecture.svg" alt="Layered architecture of the firmware" width="450px">
+                <figcaption>Layered architecture of the firmware. Custom modules are shown in blue.</figcaption>
+            </div>
+
+            <p>
+                Separating the firmware in different modules also allowed me to <b>build and test them independently</b>, effectively isolating any unknown bound to a specific module from the rest of the system. This greatly accelerates the testing and debugging phases of the development process, and <b>improves the overall quality and robustness of the code.</b></p>
+            <p>
+                Starting from the lower level, we have the hardware drivers: the LCD display driver (ST7735S), the buzzer driver (MH-FMD), and the gamepad driver. Those drivers take care of <b>creating an abstraction layer between the hardware and the application</b> by providing a set of specific functions and data structures. They rely on the standard C libraries and the ESP-IDF API.</p>
+            <p>
+                On top of the hardware drivers comes the game engine and the GATT server. The game engine is a fully custom library that provides a set of tools to make a platform game application. Here are some of the main features it provides:</p>
+            <ul>
+                <li>Frame generation using graphics assets (sprites, animations, text, etc.)</li>
+                <li>Physics computation of dynamic objects (gravity, collision, aiming, etc.)</li>
+                <li>Event logging of interactions with the game's environment.</li>
+            </ul>
+            <p>
+                The <b>game engine is divided into multiple source files</b>, with each file dedicated to a specific functionality of the game.</p>
+            <p>
+                Regarding the GATT server, the gamepad’s driver is used to read the position of the joystick whenever a read request from the BLE client is received. More on this in the <a class="intralink" href="#gamepad"><i>Gamepad and Bluetooth Low Energy</i></a> section.</p>
+
+
+            <h2 id="graphics-sound">Graphics and Sound</h2>
+            <p>
+                The graphics and sound output of the game rely on the building blocks of this projects: the hardware drivers. <b>Written from scratch</b>, they allowed me to build the game engine using their set of functionalities, like sending formatted data to their peripheral. For example, the <a href="https://github.com/valentinbetbeze/TheLordOfTheFakeRing/tree/main/console_firmware/components/ST7735S_driver" target="_blank">custom ST7735S driver</a> offers various data structures and functions to draw basic objects on the screen, like circles, rectangles, text, and custom sprites.</p>
+            <p>
+                Let’s have a look at how those drivers are used by the game engine to bring Tolkien's universe to life.</p>
+
+            <h3 id="build-process">How are frames built and displayed?</h3>
+            <p>
+                A frame is a <b>2D array that carries the information to visualize the current state of the game</b>, centered around the player’s character. Each value of the frame represents a pixel of the display. Hence, the number of elements in the frame is as large as the resolution of the display. In this project, I am using a 160x128 pixel TFT LCD display, accounting for a total of <b>20480 pixels</b>.</p>
+
+            <div class="center">
+                <img src="img/P2_Platform_Game/frame.png" alt="Example of a game frame" width="280px">
+                <figcaption>Example of a game frame</figcaption>
+            </div>
+
+            <p>
+                To print anything on the screen, pixels must be given a <b>color code value</b>, usually as an hexadecimal number. The display’s micro-chip driver, namely the ST7735S, accepts three types of color code formats: 12-bit, 16-bit, and 18-bit color codes. The higher the color code, <b>the larger the available color palette is, at the expense of memory</b>. Let’s see how much memory would be needed for each of those color codes on our frame:</p>
+            <ul>
+                <li>(12-bit) 4-4-4 RGB:</li>
+                <ul>
+                    <li>Up to 4000 different colors</li>
+                    <li>Would have to use the nearest larger data type available: 16-bit integer</li>
+                    <li>Memory used: 20480 pixels * 16 bits / 8 bits-per-byte = 40960 bytes</li>
+                </ul>
+                <li>(16-bit) 5-6-5 RGB:</li>
+                <ul>
+                    <li>Up to 65000 different colors</li>
+                    <li>Same as for the 12-bit format: 40960 bytes</li>
+                </ul>
+                <li>(18-bit) 6-6-6 RGB:</li>
+                <ul>
+                    <li>Up to 262000 different colors</li>
+                    <li>Would have to use the nearest larger data type available: 32-bit integer</li>
+                    <li>Memory used: 20480 pixels * 32 bits / 8 bits-per-byte = 81920 bytes</li>
+                </ul>
+            </ul>
+            <p>
+                Obviously, I didn’t need a palette of 262k colors, and both the 12-bit and 16-bit color codes lead to the same memory size, so I went with 16-bit integers. From this point on, I knew I had to allocate <b>40.96 kB of memory for the frame</b>.</p>
+            <div class="note">
+                The ST7735S chip allows the developer to update only a portion of the screen, if desired. For this, the XY coordinates of the area must be sent prior to the data. I am, however, not interested in this feature as the game requires constant refresh of the whole screen, hence why I’m working with a full-size frame.</div>
+            <p>
+                In order to be displayed, the frame must first be built to represent the current snapshot of the game. This includes the main character, enemies, items, and most importantly the background environment.</p>
+            <p>
+                In platform games, the environment is generally made of <i>blocks</i>, which are elements fitting in a fixed-sized box frame. When everything is considered a block, the <b>environment becomes a large grid</b>. Looking at the resolution of the display (160x128 px), I could figure out the size of my grid: a 16-pixel padding would make exactly 8 rows and 10 columns on the frame.</p>
+
+            <div class="center">
+                <img src="img/P2_Platform_Game/frame_with_grid.png" alt="Frame with its grid layout" width="280px">
+                <figcaption>Frame with its grid layout</figcaption>
+            </div>
+
+            <p>
+                The purpose of using a <b>block-based framework</b> is to counter a memory constraint: to be able to play for a few minutes, a world needs to be quite lengthy. Looking at other games like Super Mario Bros. (1985), I counted a total distance of ~200 blocks for a full world. Knowing that a block is 16 pixels width/height, it gives us 200*8*(16)² = 409600 pixels worth of game map. Remember that I use 16-bit color codes, or 2 bytes per pixel. We’re now at 819.2 kB of memory for a single world map. I want at least 2 maps for the game, and the <b>maximum amount of memory on an ESP32 is around 300 kB</b>. That is where we leverage the concept of blocks.</p>
+            <p>
+                Instead of storing every single pixel in a mega-sized array, I’m only storing integers representing the type of a block. This way, a world map can be stored in a 200x8 array holding simple 8-bit signed integers: 0 could be the ‘air’, 1 an earthy block, 2 a water block, etc. This method <b>shrinks the memory required for a full world map from 819.2 kB to 1.6 kB</b> (+512 bytes per block type (sprite) ~= +4.6 kB).</p>
+
+            <div class="center">
+                <img src="img/P2_Platform_Game/grid.png" alt="Portion of a world map's data" width="280px">
+                <figcaption>Portion of a world map's data</figcaption>
+            </div>
+
+            <p>
+                This array is stored in a data structure <code>map_t</code> defined in the game engine. There is a <code>map_t</code> object for each world in the game, and the struct holds other information such as the map id, the background color, and rows/columns to be used for specific purposes.</p>
+            <br>
+
+            <div class="codeblock">
+                <pre>
+    #define NUM_BLOCKS_Y  8                     // number of rows
+
+    struct <b>map_t</b> {
+        const map_id_t id;                      // integer id
+        const uint16_t background_color;        // 16-bit background color
+        const int8_t (*data)[NUM_BLOCKS_Y];     // world map data
+    
+        ...                                     // other less important members
+    };</pre>
+            </div>
+            <br>
+
+            <p>
+                With each block type having its 16x16 sprite loaded in memory <b>once and once only</b>, the process of building a frame can take place. After filling the frame with the map’s background color, the portion of the map array around the player’s location is scanned and the appropriate sprite is copied/pasted onto the frame. This process is done by the <i>display</i> module of the game engine.</p>
+
+            <div class="center">
+                <img src="img/P2_Platform_Game/map_frame_build_process.svg" alt="Process of building a map frame" width="600px">
+                <figcaption>Process of building a map frame</figcaption>
+            </div>
+
+            <p>
+                Whenever the player’s character reaches half of the display’s width, the frame moves to the right by increments of the character’s speed (currently 1 pixel per iteration). To avoid having dark spots whenever the frame is offset from the map’s grid, the firmware scans the 11th column as well.</p>
+
+            <div class="center" style="padding-top: 0px;">
+                <img src="img/P2_Platform_Game/map_scanning.png" alt="Scanning of the map with an offset frame" width="550px">
+                <figcaption>Scanning of the map with an offset frame</figcaption>
+            </div>
+
+            <p>
+                For the frame to be displayed, it must be sent via SPI to the ST7735S micro-chip of the external LCD screen. Unfortunately, due its size and limitations of the ESP32’s SPI module, <b>the frame cannot be sent in one transaction</b>. Without <i>Direct Memory Access</i> (DMA), only 64 bytes can be sent at once (4092 bytes with DMA). As the size of the frame is 40.96 kB, I had to chop the frame in 640 packets and send those packets one after the other.</p>
+            <p>
+                This implies that <code>frame[]</code> <b>does not share the dimensions of the screen</b>, and does not look like the snapshots that I showed in the previous examples. Its rows represent the number of transactions, and the columns are the number of pixels per transaction.</p>
+
+            <div class="center">
+                <img src="img/P2_Platform_Game/SPI_transfer_process.svg" alt="Process to write in and send the frame via SPI" width="600px">
+                <figcaption>Process to write in and send the frame via SPI</figcaption>
+            </div>
+
+            <p>
+                To figure out where to place each pixel in the frame, the function <code>get_frame_indexes()</code> makes use of division and modulo operations to convert the Cartesian coordinates <i>(x, y)</i> of the display to the indexes of the frame.</p>
+
+            <h3 id="playing-sound">How are sound effects created and played?</h3>
+            <p>
+                As we’ve seen earlier in the Overview section, sounds are played via a 3.3V piezoelectric buzzer wired to the console’s MCU. Piezoelectric buzzers are active electromechanical devices using a flexible membrane to generate sound waves. When an oscillating signal is fed to the buzzer, the membrane will bend inward and outward at the frequency of the oscillation.</p>
+            <p>
+                Knowing this, <b>if a sequence of frequencies can be given at controlled intervals, a melody can be played</b>. Using 16-bit unsigned integers gives us frequencies ranging from 0 Hz to 65 535 Hz. In practice, there is little need to go over 3000 Hz as the pitch would be too high anyway.</p>
+
+            <div class="center">
+                <img src="img/P2_Platform_Game/sound_data.svg" alt="Example of a sound effect made of 4 frequencies">
+                <figcaption>Example of a sound effect made of 4 frequencies</figcaption>
+            </div>
+
+            <p>
+                To send a frequency over to the buzzer, I am using the manufacturer’s Pulse Width Modulation (PWM) API. From this API, the function <code>ledc_set_freq()</code> allows the developer to set a frequency to the given PWM channel. While a sound effect is being played, this function is repeatedly called with the new frequency after the previous note’s duration is over. It keeps doing so until all notes (or frequencies) have been played. The PWM signal is fixed at 50% duty cycle to have a balanced sound output.</p>
+            <br>
+
+            <div class="codeblock">
+                <pre>
+    struct <b>music_t</b> {
+        uint8_t playing : 1;                // 1 if the music is playing
+        uint8_t note_index;
+        uint32_t timer;
+        const uint16_t num_notes;           // Number of notes
+        const uint16_t duration;            // Note duration, in milliseconds
+        const uint16_t *data;               // Music data
+    };</pre>
+            </div>
+            <br>
+
+            <p>
+                For every sound effect, a data structure <code>music_t</code> is loaded in memory at compile time. Its constant members define the <b>properties of the sound effect</b>: a pointer to the data, the number of notes and the duration of each note. Non-constant members  are updated at runtime whenever the sound effect is played.</p>
+
+            <p>
+                At the game’s level, a pointer <code>music_t *cued_music</code> is used to <b>remember the next sound effect to be played</b>. The pointer is updated by the game engine whenever an in-game interaction happens: block collision, enemy’s death, spell used, etc. Every game loop <code>cued_music</code> is checked, and if non-NULL, <code>play_music()</code> is called with the pointer as argument.</p>
+
+
+            <h2 id="interactivity">Game Interactivity</h2>
+
+            <h3 id="physics">Physics: simulating collisions and gravity</h3>
+            <p>
+                To create an <b>immersive gameplay and give games a sense of reality</b>, simple physics simulations are often implemented in video game projects. This one is no exception. Blocks made of “solid matter” are one of the main obstacles in this platform game, so I needed to make sure the player couldn’t run through them.</p>
+            <p>
+                For this, I developed a <b>collision feature</b> that can apply a “reactive force” to a moving entity, expressed in the game engine as a <code>physics_t</code> object. Entities like the player’s character or enemies have a <code>physics_t</code> member in their own data structure.</p>
+            <p>
+                Because of the number of nodes and configurations, physics simulations are known to be computationally expensive. Even if this is a simple application, it is still running on an embedded system, with limited resources. Hence, to kill two birds with one stone, I’ve leveraged once again the block-based framework of the game: <b>collisions are not checked at the pixel level, but at the block level</b>. This way, instead of iterating through the outer 64 pixels of the studied entity (a 16x16 element), the program only checks for the 4 nearby blocks. Here is how it works.</p>
+            
+            <div class="center" style="padding-top: 0px;">
+                <img src="img/P2_Platform_Game/collision_feature_process.svg" alt="4-step process of the collision detection and correction feature">
+                <figcaption>4-step process of the collision detection and correction feature</figcaption>
+            </div>
+
+            <p>
+                If all four blocks around the entity are non-solid (such as a background block) or destroyed, the <code>check_collision()</code> function returns immediately, avoiding useless computation.</p>
+
+            <br>
+            <div class="codeblock">
+                <pre>
+    struct <b>physics_t</b> {
+        uint8_t top_collision :     1;
+        uint8_t bottom_collision :  1;
+        uint8_t left_collision :    1;
+        uint8_t right_collision :   1;
+        uint8_t falling :           1;
+        uint8_t jumping :           1;
+        uint8_t accelerating :      1;
+        int16_t pos_x;
+        int16_t pos_y;
+        int8_t speed_x;
+        int8_t speed_y;
+    };</pre>
+            </div>
+            <br>
+            <figcaption>Physics-enabled data structure. Top members are 1-bit state flags</figcaption>
+            <br>
+
+            <p>
+                However, if an interference is found, <b>the position of the entity is corrected</b> using the location of the interference. Every iteration of a game loop, both the main character and enemies are subject to collision checks.</p>
+            <p>
+                Finally, gravity is applied on <code>physics_t</code> objects by continuously decreasing their y-position, effectively making them fall down. By using both <b>gravity and collision mechanisms</b>, the firmware manages to simulate a complete model where the entities “walk” on the surface of the floor. As pull forces (from gravity) and reactive forces (from collisions) compensate each other, the position remains still. Just like in real life.</p>
+
+            <div class="center">
+                <img src="img/P2_Platform_Game/gravity+collision.svg" alt="Gravity and collision mechanisms compensating each other">
+                <figcaption>Gravity and collision mechanisms compensating each other</figcaption>
+            </div>
+
+            <p>
+                The concept of acceleration is a particular one in this game. Originally, I wanted to use proper equations of motions to compute the position of an entity, be it falling, jumping or running. Yet using those equations results in having float numbers. Floats are large data types (usually 32-bits), and need to be rounded, leading to rounding errors and loss of information. It was not suitable for the block-based framework of the game.</p>
+            <p>
+                Hence <b>I used a time interval as a threshold</b>. Whenever the threshold is reached during the course of an action, like falling, the speed of the <code>physics_t</code> object is increased, simulating an ongoing acceleration. Upon touching “solid matter”, the speed of the entity is reset to its initial value <code>SPEED_INITIAL</code>. As I explain in the last section about potential improvements, this method does have some flows as the entity’s velocity is based on the execution speed of the program.</p>
+            <p>
+                There are many other physics-like mechanisms in the game, such as aiming, line of sight detection, slippy block edges, etc. If you’re interested, you can have a look at the <a href="https://github.com/valentinbetbeze/TheLordOfTheFakeRing/tree/main/console_firmware/components/game_engine" target="_blank">source files of the game engine</a>, which are detailed with lots of comments.</p>
+            <br>
+
+            <h3 id="events">In-game interactions: handling events</h3>
+            <p>
+                What is an event and why is it important to handle them?</p>
+            <p>
+                Events are <b>occurrences</b>, generally happening due to inputs from the player, that can modify the game’s environment or <b>trigger a response from the system</b>, such as a sound effect being played. Handling them properly helps to make the game interactive and creates a more immersive gameplay.</p>
+            <div class="note">
+                For example, a chest being hit from beneath is an event, and triggers a response from the game: the state of the chest changes from <i>closed</i> to <i>open</i>, and delivers an item.</div>
+            <p>
+                In April 2023, when I started this project, I did not know the concept of event-driven programming and callback functions. To handle events, I designed a system of <i>records</i> whose purpose is to <b>store and manage events</b>.</p>
+            <p>
+                Those records are data structures carrying flags that identify the current state of an interactive element. They are created whenever an event occurs and identify the interactive element using its unique row & column indexes (from the map’s array).</p>
+            <br>
+
+            <div class="codeblock">
+                <pre>
+    struct block_t {
+        uint8_t is_hit :            1;
+        uint8_t destroyed :         1;
+        uint8_t item_given :        1;
+        uint8_t bumping :           1;
+        int16_t row;
+        int8_t column;
+    };</pre>
+            </div>
+            <br>
+            <figcaption>Data structure of a block record</figcaption>
+            <br>
+
+            <p>
+                If a chest block is opened, the record will have the flags <code>is_hit</code> and <code>bumping</code> set to 1. This will trigger the system to release an item from the chest, and start a bumping animation. Once the item is given, the record from this block will be retrieved and updated by setting the flag <code>item_given</code> flag to 1. From now on, this chest block is unlocked and cannot release an item anymore.</p>
+
+            <div class="center">
+                <img src="img/P2_Platform_Game/event_handling.svg" alt="Event handling process" width="550px">
+                <figcaption>Event handling process</figcaption>
+            </div>
+
+            <p>
+                Records are also used during the frame construction process. For example, if an enemy was killed by the player, the firmware will know it from reading the enemy’s record and decide not to print its sprite on the frame. Every game loop, arrays holding those records are <b>scanned and cleaned</b>. The cleaning process removes records of elements that are beyond the player’s current position.</p>
+
+
+            <h2 id="gamepad-ble">Gamepad and Bluetooth Low Energy</h2>
+            <p>
+                As the only way to provide input, the gamepad is an important component of the system. It is composed of <b>an analog thumb joystick and 6 buttons</b>. In this project, I use the x-axis of the joystick to move the character forward and backward, as well as two buttons: A to use a spell and C to jump.</p>
+            <p>
+                Implementing the gamepad to the system could be as simple as using an Analog to Digital Converter (ADC) module and polling the state of some GPIOs. But hardware always comes with its own issues, and this gamepad is no exception.</p>
+            
+            <h3 id="gamepad">Implementing the gamepad in the system</h3>
+            <h4>Joystick’s behavior correction</h4>
+            <p>
+                Each of the joystick’s axes has a potentiometer that is used as a voltage divider. The voltage across the potentiometer is fed to an ADC and converted into a raw integer value. We can define the behavior of an axis taking three positions:</p>
+            <ul>
+                <li>Fully pushed to the left,</li>
+                <li>Fully pushed to the right,</li>
+                <li>Idle in the middle.</li>
+            </ul>
+            <p>
+                Here comes the hitch. Because the potentiometer is not perfectly centered on its resistive track, <b>its behavior isn’t linear</b>. The left and right tracks differ by a small margin, significant enough to feel something is off when using the joystick. In the case of the x-axis, the left resistive track seems to be shorter than the right one, as we can see on the plot below.</p>
+
+            <div class="center">
+                <img src="img/P2_Platform_Game/joystick_correction_plot.svg" alt="Joystick x-axis behavior comparison" style="margin-top: -20px; padding-top: 0px;">
+                <figcaption>Joystick x-axis behavior comparison</figcaption>
+            </div>
+
+            <p>
+                To correct this defect, I have used a <b>linear regression between the utmost left and right position</b> so that the idle position is artificially recentered. This is done by first computing the correction factor for both resistive tracks in <code>gamepad_config_joystick()</code>, and applying it during the reading operation in <code>gamepad_read_joystick_axis()</code>.</p>
+            <h4>Button state polling</h4>
+            <p>
+                A common issue found with buttons is a phenomenon called <i>bouncing</i>. Funnily, I did not encounter it while working on this project. One of the reasons may be that I am polling buttons every ~20 milliseconds and this delay is enough to get rid of the bouncing. In any case, if this happens, applying a non-blocking delay of a few milliseconds generally does the job.</p>
+            <p>
+                Instead of solving a hardware issue, it was a requirement that I needed to implement through the driver. I wanted the <b>game to react only once after a button is pressed</b>, independently of the duration of the push, for it would be unrealistic to initiate 40 jumps a second.</p>
+
+            <div class="center">
+                <img src="img/P2_Platform_Game/button_polling.svg" alt="Button polling requirement">
+                <figcaption>Button polling requirement</figcaption>
+            </div>
+
+            <p>
+                To do so, I made a data structure <code>button_t</code> that holds the previous and current GPIO level of a button. The principle is the following: the button is <b>considered pressed if two conditions</b> are met:</p>
+            <ol>
+                <li>The previous level of the GPIO is different from the current one, meaning an action has occurred. This is the part that could have been subject to bouncing.</li>
+                <li>The GPIO level is low, meaning the button is pushed down.</li>
+            </ol>
+            <p>
+                This way, a continuous push on the button is filtered out (from condition 1) and the related action only triggers once. A nice addition to the game would be an option to disable this feature and allow “charging a jump” before releasing the button. Maybe someday.</p>
+            <br>
+
+            <div class="codeblock">
+            <pre>
+    struct <b>button_t</b> {
+        gpio_num_t gpio_num;            // GPIO number                            
+        uint8_t previous_state;         // Button state before the last polling   
+        uint8_t current_state;          // Button state of the current polling
+        uint8_t pushed;                 // 1 the first time the button was pushed               
+    };</pre>
+            </div>
+            <br>
+
+            <h3 id="ble">Using BLE for wireless communication</h3>
+            <p>
+                In search of a wireless communication protocol to use between my console and controller, ESP32 offered me three options: Wi-Fi, Bluetooth Classic, and Bluetooth Low Energy (BLE). As my only requirement was to send a <b>few bytes of data</b> from a <b>portable device</b>, I mostly needed a power friendly protocol. Lucky me, BLE is a low-power consumption protocol that is widely used and has free documentation.</p>
+            <p>
+                Two BLE stacks are available for use on the ESP-IDF framework, namely Bluedroid and nimBLE. Bluedroid supports dual-mode, where both Bluetooth Classic and BLE can be used on the same system. That is handy for devices like phones but adds a layer of complexity. Unlike Bluedroid, <b>nimBLE is a BLE-only stack</b> that Espressif has ported to its platform and is much simpler to use.</p>
+            <p>
+                I must admit, the experience I had with developing a BLE server/client was, at first, a bit unsettling. It made me discover the event-driven programming paradigm and the principle and use of callback functions. To help me in those first steps, I used and modified some source files of examples made by Espressif. I tried to simplify those examples as much as possible, removing unnecessary or advanced features like encryption.</p>
+            <p>
+                On this project, the console’s ESP32 would be the client and the controller’s ESP32 the peripheral. <b>As my first time developing with BLE, I lowered my requirements to the minimum</b>: all I needed was to send the joystick’s position and the state of both buttons A and C from the controller to the console. Logically, one would use a subscription/notification system to save power on the portable device, and update the client only when the values change. Yet, for now I decided to simply have the client continuously poll the server for the values. It is not power efficient, but it’s a simple solution for a first step. <b>The plan is to implement better solutions gradually</b>, so that I can learn by practicing.</p>
+
+            <div class="center">
+                <img src="img/P2_Platform_Game/GATT_server.svg" alt="GATT server service & characteristics used in the firmware" width="230px">
+                <figcaption>GATT server service & characteristics used in the firmware</figcaption>
+            </div>
+
+            <p>
+                The GATT server has <b>one service holding three characteristics</b>: the x-axis of the joystick and the two buttons. They are <b>read-only</b> and have their own Universally Unique Identifier (UUID. I’ve manually created and entered those UUIDs in both the server and the client files. This way, whenever the client wants to access one of the characteristics, it sends the corresponding UUID to the GATT server. The latter then determines which characteristic is being accessed by examining the received 128-bit UUID.</p>
+            <p>
+                Once accessed, each characteristic has its own procedure. Button A and Button C, for example, poll the state of their respective GPIO and place it in a buffer to be sent back to the client (the filtering is done on the console).</p>
+            <p>
+                The current implementation of the BLE feature is simple but has some limitations. The recurrent use of read requests results in unnecessary data transfers and <b>consumes additional power ressources on the peripheral device</b>, undermining the efficiency benefits that BLE offers. As I learn more about BLE, my first action will be to replace the constant polling with a notification/indication feature that will initiate a transfer only when data changes.</p>
+
+
+            <h2 id="sys-eff">System Resource Efficiency</h2>
+            <p>
+                Approaching the end of this presentation, I will now focus on the design choices I made regarding memory management and the strategies I have employed to optimize performances, all in the purpose of reaching a minimum of 30 FPS.</p>
+
+            <h3 id="mem-management">Memory management</h3>
+            <p>
+                Prior to this project, while working on the CS50x programming course, I learnt about the heap and dynamic memory allocation with functions like <code>malloc()</code>, <code>calloc()</code>, or <code>realloc()</code>. While handy to manage memory at runtime, I’ve also learnt that dynamic allocation can be a lengthy process, prone to memory leaks, and cause memory fragmentation. From my understanding, <b>judicious use of dynamic memory allocation is advised</b>, especially when working on an embedded system.</p>
+            <p>
+                Hence, as a sort of training, I set upon myself the challenge of never using the heap, and <b>relying entirely on the data segment, .bss segment, and the stack</b>. This way, I could improve the performances of the system and increase the FPS of the game. Another requirement was to use <b>as few global variables as possible</b>, to have a robust and reliable firmware.</p>
+
+            <div class="center">
+                <img src="img/P2_Platform_Game/DFD_global_variables.svg" alt="Data flow between global variables and the system’s main layers">
+                <figcaption>Data flow between global variables and the system’s main layers</figcaption>
+            </div>
+
+            <p>
+                To do so, I statically allocated memory under the form of arrays, which act as independent keystones for each layer of the architecture:</p>
+            <ul>
+                <li>ST7735S driver: The 2D array <code>frame[][]</code>, which represents a fully-sized display image, is declared in <i>st7735s_hal.c</i>.</li>
+                <li>Game engine: <code>blocks[]</code>, <code>items[]</code>, <code>enemies[]</code>, <code>projectiles[]</code>, and <code>platforms[]</code>. Those arrays hold records and in-game objects. They are declared in the C source files of the game engine.</li>
+                <li>Assets: Located in the data segment, asset files contain constant arrays of data for sprites, music, game maps, and text fonts.</li>
+            </ul>
+            <p>
+                Most of the firmware’s <b>data continuously flows in and out of those arrays</b>, making debugging an issue easier. Assertion mechanisms are also in place in case of overflows, but this should not happen if the game application is properly designed and tested. There are no player inputs that can result in a buffer overflow: this sole responsibility lies on the game developer’s shoulders.</p>
+            <div class="note">
+                Those global variables are passed to upper layers via the use of the keyword <code>extern</code> in the appropriate header files.</div>
+            <p>
+                Indeed, unlike <code>frame[]</code> whose size is dependent on the screen resolution, the <b>game engine’s global arrays must have their size arbitrarily chosen by the developer</b>. This limitation prevents a dynamic response from the game engine in case of overflow and will instead trigger an assertion, which stops the program. This requires the developer to be careful when designing game maps, so that arrays can handle any worst-case scenario.</p>
+            <p>
+                Another risk attributed to this strategy occurs if the firmware is based on a multi threaded architecture, which I plan to implement in future updates. <b>Sharing global variables among different tasks can result in race conditions</b> if both read and write operations happen simultaneously.</p>
+            <p>
+                Regarding local variables and data structures, I have also made sure to optimize memory by using the smallest data types available from the <code>stdint.h</code> library. I’ve also made use of <b>bit-level flag variables</b>, which can conveniently be expressed in data structures like so:</p>
+            <br>
+
+            <div class="codeblock">
+                <pre>
+    struct <b>some_struct</b> {
+        uint8_t some_flag: 1;       // 1-bit flag
+                                    // Seven more 1-bit flags can be used
+    };</pre>
+            </div>
+            <br>
+
+            <p>
+                This has the added benefit of making the code easier to read and understand by removing heavy uses of bitwise shift operations.</p>
+
+            <h3 id="perf">Optimizing performances</h3>
+            <p>
+                To run the game above the desired FPS and provide the player with an enjoyable experience, optimizing performances is key. As the current architecture is single-cored and sequential (version 1.3.1), all tasks’ durations sum up. Two of them specifically lead the way: the game logic processing (including building the frame) and the transfer of the frame over to the external display.</p>
+            <p>
+                Regarding the game’s logic and building of the frame, as we have seen in previous sections, my <b>optimization strategy was to avoid using dynamic memory allocation</b> and to <b>minimize the impact of resource-intensive tasks</b> like physics simulations. The main performance bottleneck now lies in the construction of the frame. As some portions of the map contain more blocks (like caves), I have observed substantial drops in performance in those areas, in the order of 20 FPS. Better algorithms could be developed to address this issue, but there are other ways to improve performances…</p>
+            <p>
+                Which leads us to the <b>second battlefront: the transfer of the frame via SPI</b>. If we are to refresh the display at more than 30 FPS, we have to send the frame’s 40960 bytes to the screen 30 times per second. Sending this amount of data over SPI is very time-consuming. It takes 46.2% (17.4 ms) of the total execution time with most optimizations implemented.</p>
+            <p>
+                Let’s have a look at them. At the hardware level, I used the SPI dedicated IO_MUX pins and the maximum allowable clock frequency (40Mhz). At the software level, I implemented the two following features:</p>
+            <ol>
+                <li>Maximizing each SPI transaction</li>
+                <p>
+                    In the section <a class="intralink" href="#build-process"><i>How are frames built and displayed?</i></a>, we saw that the frame has specific dimensions to fit the requirements of the SPI protocol. The purpose was to have a continuous chunk of data organized in such a way that <b>every SPI transaction would be carrying as much data as possible</b>. This helps reduce the number of iterations and by extension the total transaction interval time (a fixed delay between each transaction).</p>
+                <li>Using <i>Direct Memory Access</i> (DMA)</li>
+                <p>
+                    DMA is a feature that gives direct RAM access to a peripheral device without the need of the CPU, which results in faster data exchanges. On ESP32, It has the added benefit of <b>allowing more data to be sent per SPI transaction</b>. Before using it, I could send a maximum of 64 bytes per transaction, resulting in the use of 640 transactions to send all 40960 bytes. With DMA, I can now send 4092 bytes per transaction, bringing the <b>number of transactions down from 640 to 11</b>.</p>
+                <div class="note">
+                    At compile time, the firmware automatically defines the dimensions of the frame depending on whether DMA is used or not, allowing the game to work even if the feature is disabled.</div>
+
+                <div class="center">
+                    <img src="img/P2_Platform_Game/DMA_comparison.svg" alt="Impact of the use of DMA on the performances of the system (version 1.3.1)" style="margin-top: -40px; padding-top: 0px; margin-bottom: -10px; padding-bottom: 0px;">
+                    <figcaption>Impact of the use of DMA on the performances of the system (version 1.3.1)</figcaption>
+                </div>
+
+            </ol>
+            <p>
+                Combining both the optimization of SPI transactions and the use of DMA, I managed to <b>save 8.4 ms</b> on the transfer of the frame to the display, <b>bringing the FPS up from 26.5 to 35</b> (numbers obtained on a resource-heavy portion of the map). The 30 FPS target frame rate is passed.</p>
+
+
+            <h2 id="results">Results & Potential Improvements</h2>
+            <p>
+                In french, we say that a picture is worth a thousand words. Is a video worth a thousand pictures?</p>
+
+            <!--Video-->
+            <iframe width="650" height="365" src="https://www.youtube.com/embed/r6Lf2FIdQUY" title="Full Gameplay Video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="padding-top: 10px; padding-bottom: 30px;"></iframe>
+
+            <p>
+                I can think of several improvements to keep improving the system and the game. The main one is to couple the use of an <b>RTOS and the dual-core feature</b> of the ESP32. This way, I could run the most expensive tasks separately, one in each thread, as long as I redesign the architecture of the firmware accordingly, avoiding dependencies and race conditions.</p>
+
+            <div class="center">
+                <img src="img/P2_Platform_Game/perf_outlook.svg" alt="FPS expectations with the use of a second core" style="margin-top: -30px; padding-top: 0px; margin-bottom: -10px; padding-bottom: 0px;">
+                <figcaption>FPS expectations with the use of a second core (worst-case)</figcaption>
+            </div>
+
+            <p>
+                The idea is to run the game’s logic and frame generation on one core, and the SPI transfer and Bluetooth Low Energy stack on the other. To do this, I will probably have to allocate a second 40.96 kB frame as the firmware would still have to complete a frame before sending it. With this improvement, I expect a <b>frame to be built and sent to the display in less than 16 ms</b> (worst-case scenario), increasing the maximum refresh rate between 58 to 62 FPS.</p>
+            <p>
+                Other improvements include upgrading the <b>BLE communication method</b> from constant polling to a <b>notification/indication system</b>. The constant pollings consume a lot of energy from the peripheral, which is not what we want for a portable device such as a game controller. Instead, using notifications/indications will give the peripheral the initiative to send data whenever an update occurs, saving resources in the process.</p>
+
+
+            <h2 id="wrapping-up">Wrapping Up</h2>
+            <p>
+                If you made it this far in the presentation, first <b>thank you</b> for your time! I hope you enjoyed reading it.</p>
+            <p>
+                If you have the hardware and are keen to try the game out, feel free to download the source code from the project’s <a href="https://github.com/valentinbetbeze/TheLordOfTheFakeRing" target="_blank">Github repository</a>. I have written a little Readme file to help with the installation and compilation requirements. Keep me in touch if you beat the game!</p>
+            <p>
+                Now that this project is ‘completed’, my next goals are to <b>learn programming a multithreaded firmware using an RTOS</b> like FreeRTOS. This is an absolute must-have for an embedded engineer and I very much intend to gain skills and fluency in using those tools.</p>
+            <p>
+                Through my next project, I also want to <b>learn how to control critical timing requirements</b>, via the use of interrupts and other techniques.</p>
+
         </div>
         <a class="mybutton" style="position: relative; align-self: last baseline;" href="#">Go back up ↑</a>
         <div style="height: 100px;"></div>
+        <div class="button-contents-mask" style="bottom:0; height:550px;"></div>
     </main>
     <!-- Footer -->
     <footer>

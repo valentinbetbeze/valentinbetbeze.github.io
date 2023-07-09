@@ -35,6 +35,7 @@ body {
   padding: 0;
 }
 main {
+  position: relative;
   display: flex; 
   flex-direction: column;
   width: var(--main-width);
@@ -43,7 +44,7 @@ main {
 }
 main p {
   font-family: var(--font-text);
-  color: var(--text-color-01);
+  color: black;
   margin-bottom: 20px;
   line-height: 25px;
 }
@@ -80,12 +81,25 @@ main img {
   margin-bottom: 10px;
   max-width: var(--main-width);
 }
+ul {
+  font-family: var(--font-text);
+  margin-top: 20px;
+  margin-bottom: 40px;
+}
+ul li {
+  margin-bottom: 10px;
+}
 ol {
   font-family: var(--font-text);
-  margin-top: -10px;
+  margin-top: 20px;
+  margin-bottom: 40px;
 }
 ol li {
-  margin-bottom: -20px;
+  margin-bottom: 10px;
+}
+ol.contents ul {
+  margin-top: 10px;
+  margin-bottom: 10px;
 }
 h1 {
   display: inline-block;
@@ -100,18 +114,28 @@ h1 {
 }
 h2 {
   display: inline-block;
+  scroll-margin-top: 70px;
   color: var(--color-03);
   font-family: var(--font-header);
   font-size: xx-large; /*25px*/
   margin: 0px;
-  margin-top: 15px;
+  margin-top: 50px;
   margin-bottom: 15px;
 }
 h3 {
+  scroll-margin-top: 70px;
   font-family: var(--font-header);
-  font-size: large;
+  font-size: x-large;
   font-style: italic;
   color: var(--color-06);
+  margin-top: 30px;
+}
+h4 {
+  font-family: var(--font-text);
+  color: black;
+  font-style: bold;
+  margin-bottom: 20px;
+  line-height: 25px;
 }
 figcaption {
   font-size: small;
@@ -271,6 +295,7 @@ footer svg:hover {
   margin-left: auto;
   margin-right: auto;
   background-color: black;
+  z-index: 2;
 }
 .banner img {
   display: block;
@@ -278,9 +303,12 @@ footer svg:hover {
   height: auto;
 }
 .center {
+  display: block;
   text-align: center;
   margin-left: auto;
   margin-right: auto;
+  padding-bottom: 30px;
+  padding-top: 30px;
 }
 .mybutton {
   display: inline-flex;
@@ -309,6 +337,20 @@ footer svg:hover {
   background-color: #abdbff;
   border-bottom-color: #abdbff;
 }
+.mybutton.contents {
+  position: fixed;
+  top: 50px;
+  align-self: last baseline;
+  margin-right: -100px;
+}
+.button-contents-mask {
+  position:absolute;
+  width:100px;
+  background-color: white;
+  align-self: last baseline;
+  margin-right: -100px;
+  z-index: 2;
+}
 .note {
   display: block;
   background-color: #fff5be;
@@ -324,6 +366,9 @@ footer svg:hover {
   border-top-width: 10px;
   border-top-color: #ffea75;
 }
+.note h2 {
+  margin-top: 10px;
+}
 .note ul {
   padding-left: 15px;
   padding-bottom: 0;
@@ -335,4 +380,30 @@ footer svg:hover {
   border-top-style: solid;
   border-top-width: 6px;
   border-top-color: #e1e1e1;
+}
+.codeblock {
+  background-color: #0000000d;
+  padding-left: 3px;
+  padding-right: 3px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  border-radius: 3px;
+}
+.intralink {
+  text-decoration: none;
+  font-family: var(--font-text);
+  color: black;
+}
+.intralink:hover {
+  background-color: var(--color-04);
+}
+
+/* Rules */
+@media (max-width: 870px) {
+  .mybutton.contents {
+    display: none;
+  }
+  .button-contents-mask {
+    display: none;
+  }
 }

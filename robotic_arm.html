@@ -9,7 +9,7 @@
 
 <!-- Webpage -->
 <body>
-    <div class=banner><img src="img/robot_gif.gif" style="transform: translateY(7vw);"></div>
+    <div class=banner><img src="img/P1_Robot_Arm/robot_gif.gif" style="transform: translateY(7vw);"></div>
     <!-- Navigation bar -->
     <nav>
         <ul>
@@ -31,6 +31,8 @@
     </nav>
     <!-- Main section -->
     <main>
+        <div class="button-contents-mask" style="height:1920px;"></div>
+        <a class="mybutton contents" href="#contents-table">Contents ↑</a>
         <br>
         <div>
             <h1>5-axis Robotic Arm<br>Build & Firmware</h1>
@@ -40,14 +42,17 @@
                 Project repository
             </a>
             <pre class="metadata">
-Timeline:   2021 - Design and building of the robot
-            2022 - First draft of the firmware (single motor control)
-            2023 - Current version of the firmware
-Platform:   Teensy 4.0
-Framework:  Arduino IDE</pre>
+<i>Written:        20th of June 2023</i>
+<i>Last updated:   05th of July 2023</i>
+
+Timeline:       2020 - Design and building of the robot
+                2022 - First draft of the firmware (single motor control)
+                2023 - Current version of the firmware
+Platform:       Teensy 4.0
+Framework:      Arduino IDE</pre>
             <br>
             <p>
-                <b>Learning how to program a robotic arm</b> has always been in my bucket list. But getting a decent desktop-sized robotic arm kit can be expensive, especially when you're a student. Fortunately, having a 3D-printer at hand and some skills in mechanical engineering can help making one for less than €100. And after a few weeks of design and tinkering, the coding could finally begin.</p>
+                <b>Learning how to program a robotic arm</b> has always been in my bucket list. But getting a decent desktop-sized robotic arm kit can be expensive, especially for a student. Fortunately, having a 3D-printer at hand and some skills in mechanical engineering can help making one for less than €100. And after a few weeks of design and tinkering, the coding could finally begin.</p>
             <p>
                 In this presentation, which will <b>mainly focus on the firmware of the robot</b>, I will explain how the dynamics of the system is controlled, the design choices that I have made, and much more. I will also reflect on the development process of the firmware, using what I've learned to suggest improvements or point at potential drawbacks.</p>
 
@@ -58,24 +63,38 @@ Framework:  Arduino IDE</pre>
             <div class="note">
                 <h2>TL;DR</h2>
                 <ul>
-                    <li><p>
-                        The firmware, running on a Teensy development board, has <b>3 key features</b>: smooth motion control using adaptive acceleration and deceleration, Cartesian coordinates positioning and end effector orientation control.</p></li>
-                    <li><p>
-                        Written in C, the <b>firmware's architecture</b> is a combinaison of input parsing, error handling, and parameter computing building blocks.</p></li>
-                    <li><p>
-                        While the project is finished, many enhancements can be made: using <b>transformation matrices</b> instead of trigonometry equations, <b>closed-loop position control</b> via sensor integration, or <b>non-linear trajectory generation</b> from a Python script. Possibilities are endless.</p></li>
+                    <li>
+                        The firmware, running on a Teensy development board, has <b>3 key features</b>: smooth motion control using adaptive acceleration and deceleration, Cartesian coordinates positioning and end effector orientation control.</li>
+                    <li>
+                        Written in C, the <b>firmware's architecture</b> is a combinaison of input parsing, error handling, and parameter computing building blocks.</li>
+                    <li>
+                        While the project is finished, many enhancements can be made: using <b>transformation matrices</b> instead of trigonometry equations, <b>closed-loop position control</b> via sensor integration, or <b>non-linear trajectory generation</b> from a Python script. Possibilities are endless.</li>
                 </ul>
             </div>
 
 
-            <h2>Overview</h2>
+            <h2 id="contents-table">Contents</h2>
+            <ol class="contents">
+                <li><a class="intralink" href="#overview">Overview</a></li>
+                <li><a class="intralink" href="#key-features">Key Features</a></li>
+                <ul>
+                    <li><a class="intralink" href="#dyna-motion">Dynamic Motion Profiling</a></li>
+                    <li><a class="intralink" href="#cartesian-ctrl">Cartesian Coordinate-based End Effector Control</a></li>
+                    <li><a class="intralink" href="#orientation-ctrl">End Effector Orientation Control</a></li>
+                </ul>
+                <li><a class="intralink" href="#firmware-arch">Firmware Architecture</a></li>
+                <li><a class="intralink" href="#dev-process">Development Process</a></li>
+                <li><a class="intralink" href="#results">Results and Future Enhancements</a></li>
+                <li><a class="intralink" href="#wrapping-up">Wrapping Up</a></li>
+            </ol>
+
+
+            <h2 id="overview">Overview</h2>
             <p>
                 The robot is made of six kinematics chains and five joints, resulting in a total extended arm length of 300mm. Mobility-wise, it can pivot around 180° and cover an angular range of 110°. These features allow the arm to operate a multitude of movements and position itself in various configurations.</p>
             <!--Work enveloppe-->
-            <div class="center"></div>
-                <img src="img/work_enveloppe.png" alt="Work envelopped of the robot">
-                <figcaption>Front and Top Views of the robot's work enveloppe.</figcaption>
-            </div>
+            <img src="img/P1_Robot_Arm/work_enveloppe.png" alt="Work envelopped of the robot">
+            <figcaption>Front and Top Views of the robot's work enveloppe.</figcaption>
             <br>
             <p>
                 Six servo motors, powered by a 6V external power supply, are used to generate mechanical power. They are complemented by two transmissions consisting of spur gears and bevel gears. The transmissions provide the robot with increased strength and payload capacity, at the expense of its operative range.</p>
@@ -83,101 +102,102 @@ Framework:  Arduino IDE</pre>
                 Furthermore, all cables are seamlessly embedded within the frame, minimizing clutter and ensuring a streamlined appearance.</p>
             <p>
                 Hardware-wise, the robot is controlled via a <b>Teensy 4.0 development board</b>, using an Arm Cortex-M7 microcontroller. The board itself is embedded within the base of the robot.</p>
+
             <!--Section view of the robot-->
-            <div class="center">
-                <img src="img/robotic_arm_section_view_annotated.png" alt="3D model of the arm, colored after the main kinematic chains">
-                <figcaption>Section view: 3D model of the arm, colored after the main kinematic chains</figcaption>
+            <div class="center" style="margin-top: -30px; margin-bottom: -40px;">
+                <img src="img/P1_Robot_Arm/robotic_arm_section_view_annotated.png" alt="3D model of the arm, colored after the main kinematic chains">
+                <figcaption style="transform: translateY(-40px);">Section view: 3D model of the arm, colored after the main kinematic chains</figcaption>
             </div>
-            <br><br><br>
 
 
-            <h2>Key Features</h2>
+            <h2 id="key-features">Key Features</h2>
 
-            <h3>Dynamic Motion Profiling</h3>
+            <h3 id="dyna-motion">Dynamic Motion Profiling</h3>
             <p>
                 An important feature of any control firmware is the ability to control the dynamics of the system it operates. For without it, movements would be too erratic, ending up failing to achieve the attempted task or damaging the mechanical structure of the system itself.</p>
             <p>
                 Hence, I have designed the firmware around <b>two rules</b> that define how the motion profile of each motor would be shaped:</p>
             <ol>
-                <li><p>The user is allowed to choose the end effector average speed (in mm/s).</p></li>
-                <li><p>The acceleration for each motor is computed to be as small as possible, so to have the smoothest motion.</p></li>
+                <li>The user is allowed to choose the end effector average speed (in mm/s).</li>
+                <li>The acceleration for each motor is computed to be as small as possible, so to have the smoothest motion.</li>
             </ol>
             <div class="note">
                 The <i>motion profile</i> of a system is a set of information that describes how the system is supposed to behave on a given time frame. It can be represented as a position with regards to time, or a velocity, or an acceleration.</div>
             <p>
                 The second rule implies that the acceleration and deceleration phases would be adjacent: when the motor has reached half of its total course, it stops accelerating and starts decelerating. This is a design choice I have made to make the end effector move as smoothly as possible. Yet, it has the downside of preventing the user from choosing its own desired acceleration.</p>
+
             <!--Graph of motion profile-->
             <div class="center">
-                <img src="img/motion_profile.svg" alt="Example of a motion profile" style="width: 500px; height: 500px; margin-top:-30px; margin-bottom:-30px">
+                <img src="img/P1_Robot_Arm/motion_profile.svg" alt="Example of a motion profile" style="width: 500px; height: 500px; margin-top:-30px; margin-bottom:-30px">
                 <figcaption>Example of a motion profile</figcaption>
             </div>
-            <br>
+
             <p>
                 To create such a motion profile, it is necessary to control the speed of each motor along the trajectory's time frame. To do so, two simple <b>motion equations with constant acceleration factors</b> are used, one for each phase of the trajectory. The firmware inputs the current time <i>t - t0</i> into the function and gets the angle as output, which it feeds to the motor.</p>
             <div class="note">
                 <i>t0</i> is the time recorded at the beginning of the robot operation. Hence, <i>t - t0</i> is the current time within the frame of the trajectory's duration.</div>
             <br>
 
-            <h3>Cartesian Coordinate-based End Effector Control</h3> <!--Talk about trajectory sequences here-->
+            <h3 id="cartesian-ctrl">Cartesian Coordinate-based End Effector Control</h3> <!--Talk about trajectory sequences here-->
             <p>
                 The firmware has the capability to accept a set of Cartesian coordinates via the <code>cartesian_coordinates_t</code> object to position the end effector. If the coordinates are given using the <code>x.y.z</code> format, it converts the input into joint angles using an inverse kinematics algorithm. The robot then proceeds to move at the desired location.</p>
+
             <div class="center">
-                <img src="img/cartesian_coordinate.png" alt="Cartesian coordinate system of the robot arm" style="width: 300px; height: 300px;">
+                <img src="img/P1_Robot_Arm/cartesian_coordinate.png" alt="Cartesian coordinate system of the robot arm" style="width: 300px; height: 300px;">
                 <figcaption>Cartesian coordinate system of the robot arm</figcaption>
             </div>
-            <br>
+
             <p>
                 This feature can also be used to set a <b>sequence of trajectories to follow</b>. This can be achieved with the use of an array of <code>trajectory_t</code> objects, each having its own <code>cartesian_coordinates_t</code> object. Each trajectory can even have its own effector speed <code>avg_speed</code>, enabling low and fast speed displacements on a same operative sequence.</p>
             <br>
 
-            <h3>End Effector Orientation Control</h3>
+            <h3 id="orientation-ctrl">End Effector Orientation Control</h3>
             <p>
                 Along with its <code>x</code>, <code>y</code>, and <code>z</code> members, <code>cartesian_coordinates_t</code> includes two other members: <code>yaw</code> and <code>pitch</code>. Unfortunately, I could not add <code>roll</code> to the data structure as no sixth joint exists on the robot (a future improvement perhaps).</p>
             <p>
                 The yaw and pitch of the effector are referenced on the world coordinate system. This makes it easier for the user to define an orientation <b>independently of the position of the robot</b>.</p>
             <div class="center">
-                <img src="img/effector_orientation.png" alt="Vectorial representation of the effector's orientation, with the robot being in a random configuration" style="width: 250px; height: 250px;">
+                <img src="img/P1_Robot_Arm/effector_orientation.png" alt="Vectorial representation of the effector's orientation, with the robot being in a random configuration" style="width: 250px; height: 250px;">
                 <figcaption>Vectorial representation of the effector's orientation, with the robot being in a random configuration</figcaption> 
             </div>
-            <br>
             <p>
                 We can see the outcome of this feature in the second part of the demonstration video, at the beginning of this presentation. On the 4 points of its operative sequence, the end effector keeps pointing forward, keeping a constant yaw and pitch of both 90°.</p>
-            <br><br>
             
             
-                <h2>Firmware Architecture</h2>
+            <h2 id="firmware-arch">Firmware Architecture</h2>
             <p>
-                Fully written in C and based on the Arduino framework, the firmware has for <b>primary task to give the user full control of the robot's end effector</b> (the tool fixed at the end of the arm). It is the link between the user and the robot.
+                Fully written in C and based on the Arduino framework, the firmware has for <b>primary task to give the user full control of the robot's end effector</b> (the tool fixed at the end of the arm). It is the link between the user and the robot.</p>
             <p>
                 Flashed into the memory of the Arm Cortex microcontroller, it can communicate with a PC via USB. Using a Serial Monitor, the user can then send or receive data from/to the firmware. At the other end of the system, the firmware interacts with the servo motors via General Input Output Pins (GPIO), themselves connected to the motors' data pin.</p>
+
             <!--System block diagram-->
             <div class="center">
-                <img src="img/system_block_diagram.svg" alt="High level block diagram of the firmware's environment" style="width: 501px; height: 292px;">
+                <img src="img/P1_Robot_Arm/system_block_diagram.svg" alt="High level block diagram of the firmware's environment" style="width: 501px; height: 292px;">
                 <figcaption>High level block diagram of the firmware's environment</figcaption>
             </div>
-            <br>
+
             <p>
-                The firmware offers two ways to operate the end effector: either by controlling each motor individually (the "Manual Mode"), or by giving a set of cartesian coordinates the effector shall be positioned at (the "Cartesian Mode"). Operating the robot first requires <b>any of those modes to be activated</b>.</p>
+                The firmware offers two ways to operate the end effector: either by controlling each motor individually (the "Manual Mode"), or by giving a set of cartesian coordinates the effector shall be positioned at (the "Cartesian Mode"). At its core, the firmware has a <b>sequential architecture</b> which uses state machine to operate the robot.</p>
             <p>
-                In order to do so, the firmware first reads and parses any user input given via the Serial Monitor. It then <b>catches and handles potential errors</b> before computing the required parameters for the robot to properly operate. If all of those steps complete without any issue, the firmware feeds each motor with its appropriate angle.</p>
+                When an input event is detected, the firmware first reads, parses it, and then <b>catches and handles any potential errors</b> before computing the dynamics of the system. If all of those steps complete without any issue, the firmware feeds each motor with its appropriate angle.</p>
+
             <!--Flowchart-->
             <div class="center">
-                <img src="img/robot_firmware_flowchart.svg" alt="Flowchart of the firmware">
+                <img src="img/P1_Robot_Arm/robot_firmware_flowchart.svg" alt="Flowchart of the firmware">
                 <figcaption>Flowchart of the firmware</figcaption>
             </div>
-            <br>
+
             <p>
                 Looking at the flowchart above, we see that the actuation of the robot and the computation of the trajectory are in two different scopes. An explanation of the different components surrounding this layer of the firmware is in order.</p>
             <p>
                 From parsing the input to having the servo motor move in a <b>safe and controlled way</b>, some steps are required:</p>
             <ol>
-                <li><p>The input shall be valid.</p></li>
-                <li><p>The input shall be translated into joint angles.</p></li>
-                <li><p>The joint angles shall be reachable by the motors.</p></li>
-                <li><p>A motion profile shall be determined between the start and the end of the trajectory.</p></li>
-                <li><p>All 6 servo motors shall be controlled simultaneously.</p></li>
+                <li>The input shall be valid,</li>
+                <li>The input shall be translated into joint angles,</li>
+                <li>The joint angles shall be reachable by the motors,</li>
+                <li>A motion profile shall be determined between the start and the end of the trajectory,</li>
+                <li>All 6 servo motors shall be controlled simultaneously.</li>
             </ol>
-            <br>
             <p>
                 First and foremost, if anything in the process goes wrong, which can happen in steps 1 and 3, we must ensure that the robot remains <b>absolutely isolated from any input command</b>. This is solved be using the flag <code>running</code>, set to default as <code>false</code>, and activated only if the chain of events does not trigger an error. Any error triggered during the computation process will lead to a <code>return</code> statement being called.</p>
             <div class="note">
@@ -190,10 +210,9 @@ Framework:  Arduino IDE</pre>
                 Once the profile is defined, <code>running</code> is set to <code>true</code>, which will activate the robot actuation block until the course is complete. Here is a block diagram laying out the full computation process for the dynamics parameters of the robot.</p>
             <!--Computation process block diagram-->
             <div class="center">
-                <img src="img/dynamics_computation_block_diagram.svg" alt="Computation process for the dynamics of the robot">
+                <img src="img/P1_Robot_Arm/dynamics_computation_block_diagram.svg" alt="Computation process for the dynamics of the robot">
                 <figcaption>Computation process for the dynamics of the robot</figcaption>
             </div>
-            <br>
             <p>
                 Each motor has its own <code>motor_dynamics_t</code> global variable. This data structure gathers all the parameters necessary to define a motion profile: direction, positions, time frame and acceleration. By the end of the process, when <code>compute_angle()</code> is called, each motor's motion profile is mapped and can be used during the robot's operative phase.</p>
             <div class="note">
@@ -202,9 +221,9 @@ Framework:  Arduino IDE</pre>
                 <code>compute_angle()</code> is then used to get the next angle at a given time <i>t - t0</i>. Embedded in a loop, this function will continuously feed a motor with the next angle - according to its motion profile - until the <code>trajectory.duration</code> deadline.</p>
             <p>
                 The library <code>Servo.h</code> takes care of converting the input angle in degree to the respective pulse width. The pulse width, expressed in milliseconds, is the parameter sent to the servo chip to set an angular position.</p>
-            <br><br>
 
-            <h2>Development Process</h2>
+
+            <h2 id="dev-process">Development Process</h2>
             <p>
                 I have started developing the firmware in late 2022, laying the ground for the general layout of the program and basic functionnalities such as input parsing, error handling and single motor control. I then carried on a few months later with the other features, until the current version.</p>
             <p>
@@ -219,49 +238,45 @@ Framework:  Arduino IDE</pre>
                 Knowing this, if I were to do it all over again, I would use transformation matrices and let the processor do the hard work for me. This is actually one of the ways it's done in the industry. Anyway, the purpose of this project was to learn, I learnt.</p>
             <p>
                 Apart from this issue, the rest of the development went quite smoothly. The Arduino framework actually makes it very easy, as fonctions like <code>millis()</code> or the <code>Servo.h</code> library isolate the developer from having to dive into the more hardware-oriented areas of embedded development. However, this is not necessarily a good assistance for long-term learning. Hence, <b>I will progressively move away from such abstraction layers in any future projects</b>.</p>
-            <br><br>
 
 
-            <h2>Results and Future Enhancements</h2>
+            <h2 id="results">Results and Future Enhancements</h2>
             <p>
                 As of today, the firmware is in a state where the robot can be reliably and safely operated, without fear of damaging any of its components thanks to its smooth motion feature. Control-wise, any joint can be operated individually by inputting an angle value in degree. It is also possible to control the end effector directly using a set of Cartesian coordinates.</p>
             <p>
                 Theoretically, it should be able to carry up to 1kg of payload in its worst-case configuration, when the arm is fully extended horizontally. I must admit that I haven't put the theory to the test on this one, for fear of breaking the robot or one of its components. I really wanted to program it!</p>
             <p>
                 While the project is at a stage where I consider it finished, many enhancement could be made:</p>
-            <br>
             <ol>
-                <b><li><p>Closed-loop position control</p></li></b>
-                    <br>
+                <b><li>Closed-loop position control</li></b>
                     <p>
                         The servo motors I am using on the robot have a particularity: once they receive their target angle, they handle the positioning task by themselves. This means they <b>do not communicate anything back to the microcontroller</b>, making the later absolutely blind to the real angular position.</p>
                     <p>
                         MG995 servos use a potentiometer as position sensor, itself connected to the shaft and servo's internal circuitry. As the shafts rotates, so does the potentiometer, hence acting as a variable voltage divider. When the <i>feedback signal</i> - e.i. the voltage across the potentiometer - matches the reference voltage obtained with the input pulse width, the position is reached.</p>
+
                     <!--Inside of a MG995-like servo motor-->
                     <div class="center">
-                        <img src="img/servo-parts.jpg" alt="Inside of a MG995-like servo motor" style="width: 418px; height: 200px;">
+                        <img src="img/P1_Robot_Arm/servo-parts.jpg" alt="Inside of a MG995-like servo motor" style="width: 418px; height: 200px;">
                         <figcaption>Inside of a MG995-like servo motor. Source: sparkfun.com</figcaption>
                     </div>
-                    <br>
+
                     <p>
                         Clearly, the <b>positioning of the shaft is as precise as the potentiometer</b>, that is... not so much. Hence the relatively low price of those servos: more or less €6 per unit. One could buy better motors, but better precision or torque means exponentially higher price.</p>
                     <p>
                         Another solution is to use external sensors to correct the positioning error. And those <i>would</i> be connected to the microntroller. Here is a solution with little upfront cost that requires specific firmware implementation: a proper fit for this project. Definitely the first enhancement on the table!</p>
-
                     <br>
-                <b><li><p>Non-linear trajectory generation with motion control</p></li></b>
-                    <br>
+                    
+                <b><li>Non-linear trajectory generation with motion control</li></b>
                     <p>
-                        Currently, motion control can only be used on linear trajectories (straight lines). Of course, adding up several small linear trajectories could result in a larger non-linear one. Yet an issue arises: each one of the trajectories would have its own acceleration/deceleration phases, which at such small increments would result in a quasi-linear behavior.</p>
+                        Currently, motion control can only be used on linear trajectories (straight lines). Of course, adding up several small linear trajectories could result in a larger non-linear one. Yet an issue arises: each one of the trajectories would have its own acceleration/deceleration phases, which at such small increments would result in a quasi-linear dynamic behavior.</p>
                     <p>
-                        The goal would be to have a set of functions allowing the use of a motion profile alongside a trajectory profile. Then, the user would enter a parametric equation with a desired average speed. I have though of using Python on a PC environement to model, visualize and generate the parameteric curve, taking advantage of the countless number of Python libraries available.</p>
+                        The goal would be to have a set of functions allowing the use of a motion profile alongside a trajectory profile. Then, the user would enter a parametric equation with a desired average speed. I have thought of using Python on a PC environement to model, visualize and generate the parameteric curve, taking advantage of the countless number of Python libraries available.</p>
             </ol>
             <p>
                 Those are two of many potential enhancements that I have thought of. A robot arm is a versatile tool that can be a platform for many other projects.</p>
-            <br><br>
 
 
-            <h2>Wrapping Up</h2>
+            <h2 id="wrapping-up">Wrapping Up</h2>
             <p>
                 I hope you enjoyed reading this presentation, and if you did, feel free to look at the <a href="https://github.com/valentinbetbeze/5-Axis_Robotic_Arm_Firmware" target="_blank">project's reposity on GitHub</a>.</p>
             <p>
@@ -270,6 +285,7 @@ Framework:  Arduino IDE</pre>
         </div>
         <a class="mybutton" style="position: relative; align-self: last baseline;" href="#">Go back up ↑</a>
         <div style="height: 100px;"></div>
+        <div class="button-contents-mask" style="bottom:0; height:550px;"></div>
     </main>
     <!-- Footer -->
     <footer>
