@@ -411,7 +411,7 @@ Framework:      ESP-IDF</pre>
 
             <div class="codeblock">
                 <pre>
-    struct block_t {
+    struct <b>block_t</b> {
         uint8_t is_hit :            1;
         uint8_t destroyed :         1;
         uint8_t item_given :        1;
@@ -509,7 +509,7 @@ Framework:      ESP-IDF</pre>
             </div>
 
             <p>
-                The GATT server has <b>one service holding three characteristics</b>: the x-axis of the joystick and the two buttons. They are <b>read-only</b> and have their own Universally Unique Identifier (UUID. I’ve manually created and entered those UUIDs in both the server and the client files. This way, whenever the client wants to access one of the characteristics, it sends the corresponding UUID to the GATT server. The latter then determines which characteristic is being accessed by examining the received 128-bit UUID.</p>
+                The GATT server has <b>one service holding three characteristics</b>: the x-axis of the joystick and the two buttons. They are <b>read-only</b> and have their own Universally Unique Identifier (UUID). I’ve manually created and entered those UUIDs in both the server and the client files. This way, whenever the client wants to access one of the characteristics, it sends the corresponding UUID to the GATT server. The latter then determines which characteristic is being accessed by examining the received 128-bit UUID.</p>
             <p>
                 Once accessed, each characteristic has its own procedure. Button A and Button C, for example, poll the state of their respective GPIO and place it in a buffer to be sent back to the client (the filtering is done on the console).</p>
             <p>
